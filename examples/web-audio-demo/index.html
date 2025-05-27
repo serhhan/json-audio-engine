@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JSON Audio Engine Demo</title>
+    <style>
+      :root {
+        --primary: #2563eb;
+        --primary-dark: #1d4ed8;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-800: #1f2937;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+        color: var(--gray-800);
+      }
+
+      .sequence-container {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        border-radius: 8px;
+        background: var(--gray-100);
+      }
+
+      .controls {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+
+      button {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      pre {
+        background: var(--gray-200);
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-size: 0.9rem;
+      }
+
+      .status {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        background: var(--gray-200);
+        font-size: 0.875rem;
+      }
+
+      .status.playing {
+        background: #22c55e;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>JSON Audio Engine Demos</h1>
+    <p>
+      This demo shows different ways to use the JSON Audio Engine for creating
+      dynamic audio sequences.
+    </p>
+
+    <div id="sequences"></div>
+
+    <script type="module">
+      import { AudioSequencer } from "/node_modules/json-audio-engine/src/index.js";
+      import { createWebAudioLoader } from "/node_modules/json-audio-engine/src/platforms/web/createWebAudioLoader.js";
+
+      // Create shared audio context
+      const audioContext = new AudioContext();
+      const audioLoader = createWebAudioLoader(audioContext);
+
+      // Demo sequences
+      const sequences = [
+        {
+          name: "Ambient Background",
+          description:
+            "A looping ambient sound with smooth fade-in and stereo panning",
+          config: {
+            bpm: 120,
+            layers: [
+              {
+                id: "ambient",
+                file: "sounds/ambient.mp3",
+                actions: [
+                  { type: "play", start: 0, loop: true },
+                  {
+                    type: "volume",
+                    start: 0,
+                    from: 0,
+                    to: 0.7,
+                    duration: 3,
+                    ease: "easeInOut",
+                  },
+                  {
+                    type: "pan",
+                    start: 4,
+                    from: -0.7,
+                    to: 0.7,
+                    duration: 8,
+                    ease: "linear",
+                  },
+                  {
+                    type: "pan",
+                    start: 12,
+                    from: 0.7,
+                    to: -0.7,
+                    duration: 8,
+                    ease: "linear",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          name: "Layered Sequence",
+          description:
+            "Multiple audio layers with different timing and effects",
+          config: {
+            bpm: 120,
+            layers: [
+              {
+                id: "drums",
+                file: "sounds/drums.mp3",
+                actions: [
+                  { type: "play", start: 0, loop: true },
+                  {
+                    type: "volume",
+                    start: 0,
+                    from: 0,
+                    to: 0.8,
+                    duration: 1,
+                    ease: "easeIn",
+                  },
+                ],
+              },
+              {
+                id: "melody",
+                file: "sounds/melody.mp3",
+                actions: [
+                  { type: "play", start: 2, loop: true },
+                  {
+                    type: "volume",
+                    start: 2,
+                    from: 0,
+                    to: 0.6,
+                    duration: 2,
+                    ease: "easeInOut",
+                  },
+                  {
+                    type: "pan",
+                    start: 4,
+                    from: -0.5,
+                    to: 0.5,
+                    duration: 4,
+                    ease: "linear",
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ];
+
+      // Create sequence UI
+      function createSequenceUI(sequence, index) {
+        const container = document.createElement("div");
+        container.className = "sequence-container";
+
+        const header = document.createElement("h2");
+        header.textContent = sequence.name;
+
+        const description = document.createElement("p");
+        description.textContent = sequence.description;
+
+        const controls = document.createElement("div");
+        controls.className = "controls";
+
+        const startBtn = document.createElement("button");
+        startBtn.textContent = "Start";
+
+        const stopBtn = document.createElement("button");
+        stopBtn.textContent = "Stop";
+        stopBtn.disabled = true;
+
+        const status = document.createElement("span");
+        status.className = "status";
+        status.textContent = "Ready";
+
+        const config = document.createElement("pre");
+        config.textContent = JSON.stringify(sequence.config, null, 2);
+
+        controls.append(startBtn, stopBtn, status);
+        container.append(header, description, controls, config);
+
+        // Create sequencer instance
+        const sequencer = new AudioSequencer(sequence.config, audioLoader);
+        let isInitialized = false;
+
+        // Handle start
+        startBtn.onclick = async () => {
+          try {
+            await audioContext.resume();
+
+            if (!isInitialized) {
+              status.textContent = "Initializing...";
+              await sequencer.init();
+              isInitialized = true;
+            }
+
+            sequencer.start();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            status.textContent = "Playing";
+            status.classList.add("playing");
+          } catch (error) {
+            console.error("Failed to start sequence:", error);
+            status.textContent = "Error: " + error.message;
+          }
+        };
+
+        // Handle stop
+        stopBtn.onclick = () => {
+          sequencer.stop();
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          status.textContent = "Stopped";
+          status.classList.remove("playing");
+        };
+
+        return container;
+      }
+
+      // Add sequences to page
+      const sequencesContainer = document.getElementById("sequences");
+      sequences.forEach((sequence, index) => {
+        sequencesContainer.appendChild(createSequenceUI(sequence, index));
+      });
+    </script>
+  </body>
+</html>
