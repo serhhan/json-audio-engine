@@ -12,11 +12,6 @@ A modular JavaScript library for sequencing audio playback using JSON configurat
 - Efficient resource management
 - Built with modern JavaScript (ES modules)
 
-## Installation
-
-```bash
-npm install json-audio-engine
-```
 
 ## Basic Usage
 
@@ -131,8 +126,3 @@ To support a new platform, create an audio loader function that returns an objec
 Check the `examples` directory for platform-specific implementations:
 
 - Web Audio API (`examples/web`)
-- More platforms coming soon...
-
-## License
-
-MIT
