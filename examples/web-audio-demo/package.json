@@ -1,0 +1,22 @@
+{
+  "name": "json-audio-engine-demo",
+  "version": "1.0.0",
+  "description": "Demo application showing JSON Audio Engine usage",
+  "type": "module",
+  "scripts": {
+    "setup": "pnpm install && pnpm link ../../",
+    "start": "pnpm run setup && npx http-server . -o /index.html",
+    "download-sounds": "node download-sounds.js"
+  },
+  "dependencies": {
+    "json-audio-engine": "file:../.."
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "json-audio-engine": "link:../.."
+    }
+  }
+}
